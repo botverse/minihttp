@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -10,24 +11,35 @@
 
 #define MAXRCVLEN 1023
 
+static int is_ip_address(const char *s) {
+    while (*s) {
+        if ((isdigit(*s)) || (*s == '.')) {
+            s++;
+            continue;
+        }
+        return 0;
+    }
+    return 1;
+}
+
 int main(int argc, char *argv[]) {
     char buffer[MAXRCVLEN + 1]; /* +1 so we can add null terminator */
+    in_addr_t host;
     int len, mysocket;
     struct sockaddr_in dest;
 
     mysocket = socket(AF_INET, SOCK_STREAM, 0);
 
-/*
     if (is_ip_address(argv[1])) {
-        host = gethostbyaddr_wrapper(argv[1]);
+        host = inet_addr(argv[1]);
     } else {
-        host = gethostbyname(argv[1]);
+        struct hostent hostst = *gethostbyname(argv[1]);
+        memcpy(&host, *(hostst.h_addr_list), sizeof (in_addr_t));
     }
-*/
-
+    printf("Host %s\n", argv[1]);
     memset(&dest, 0, sizeof (dest)); /* zero the struct */
     dest.sin_family = AF_INET;
-    dest.sin_addr.s_addr = inet_addr(argv[1]); /* set destination IP number */
+    dest.sin_addr.s_addr = host; /* set destination IP number */
     dest.sin_port = htons(80); /* set destination port number */
 
     connect(mysocket, (struct sockaddr *) &dest, sizeof (struct sockaddr));
